@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.boot.test.context.SpringBootTest;
+import yaremax.com.cs_task_24_04.exceptions.InvalidDataException;
 import yaremax.com.cs_task_24_04.user.User;
 
 import java.time.LocalDate;
@@ -58,7 +59,7 @@ class UserValidatorTest {
             when(emailValidator.isValid(user.getEmail())).thenReturn(false);
 
             // Act & Assert
-            assertThatExceptionOfType(IllegalArgumentException.class)
+            assertThatExceptionOfType(InvalidDataException.class)
                     .isThrownBy(() -> userValidator.validateFullUser(user));
         }
 
@@ -75,7 +76,7 @@ class UserValidatorTest {
                         .build();
 
                 // Act & Assert
-                assertThatExceptionOfType(IllegalArgumentException.class)
+                assertThatExceptionOfType(InvalidDataException.class)
                         .isThrownBy(() -> userValidator.validateFullUser(user));
                 verifyNoInteractions(dateValidator, emailValidator);
             }
@@ -91,7 +92,7 @@ class UserValidatorTest {
                         .build();
 
                 // Act & Assert
-                assertThatExceptionOfType(IllegalArgumentException.class)
+                assertThatExceptionOfType(InvalidDataException.class)
                         .isThrownBy(() -> userValidator.validateFullUser(user));
                 verifyNoInteractions(dateValidator, emailValidator);
             }
@@ -107,7 +108,7 @@ class UserValidatorTest {
                         .build();
 
                 // Act & Assert
-                assertThatExceptionOfType(IllegalArgumentException.class)
+                assertThatExceptionOfType(InvalidDataException.class)
                         .isThrownBy(() -> userValidator.validateFullUser(user));
                 verifyNoInteractions(dateValidator, emailValidator);
             }
@@ -123,7 +124,7 @@ class UserValidatorTest {
                         .build();
 
                 // Act & Assert
-                assertThatExceptionOfType(IllegalArgumentException.class)
+                assertThatExceptionOfType(InvalidDataException.class)
                         .isThrownBy(() -> userValidator.validateFullUser(user));
                 verifyNoInteractions(dateValidator, emailValidator);
             }
@@ -139,7 +140,7 @@ class UserValidatorTest {
                         .build();
 
                 // Act & Assert
-                assertThatExceptionOfType(IllegalArgumentException.class)
+                assertThatExceptionOfType(InvalidDataException.class)
                         .isThrownBy(() -> userValidator.validateFullUser(user));
                 verifyNoInteractions(dateValidator, emailValidator);
             }
@@ -155,7 +156,7 @@ class UserValidatorTest {
                         .build();
 
                 // Act & Assert
-                assertThatExceptionOfType(IllegalArgumentException.class)
+                assertThatExceptionOfType(InvalidDataException.class)
                         .isThrownBy(() -> userValidator.validateFullUser(user));
                 verifyNoInteractions(dateValidator, emailValidator);
             }
@@ -171,7 +172,7 @@ class UserValidatorTest {
                         .build();
 
                 // Act & Assert
-                assertThatExceptionOfType(IllegalArgumentException.class)
+                assertThatExceptionOfType(InvalidDataException.class)
                         .isThrownBy(() -> userValidator.validateFullUser(user));
                 verifyNoInteractions(dateValidator, emailValidator);
             }
@@ -229,9 +230,8 @@ class UserValidatorTest {
             when(emailValidator.isValid(user.getEmail())).thenReturn(false);
 
             // Act & Assert
-            assertThatExceptionOfType(IllegalArgumentException.class)
-                    .isThrownBy(() -> userValidator.validatePartialUser(user))
-                    .withMessage("Invalid email");
+            assertThatExceptionOfType(InvalidDataException.class)
+                    .isThrownBy(() -> userValidator.validatePartialUser(user));
             verify(dateValidator).validateBirthDate(user.getBirthDate());
             verify(emailValidator).isValid(user.getEmail());
         }
