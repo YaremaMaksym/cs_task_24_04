@@ -13,11 +13,11 @@ public class DateValidator {
     private int minAge;
 
     public void validateBirthDate(LocalDate birthDate) {
-        if (birthDate.isAfter(LocalDate.now())) throw new InvalidDataException("Invalid birth date. Can't be in future");
+        if (LocalDate.now().isBefore(birthDate)) throw new InvalidDataException("Invalid birth date. Can't be in future");
         if (LocalDate.now().getYear() - birthDate.getYear() < minAge) throw new InvalidDataException("Invalid birth date. Not old enough (min age is " + minAge + " y.)");
     }
 
     public void validateDateRange(LocalDate from, LocalDate to) {
-        if (from.isBefore(to)) throw new InvalidDataException("Invalid date range. 'to' can't be before 'from'");
+        if (from.isAfter(to)) throw new InvalidDataException("Invalid date range. 'to' can't be before 'from'");
     }
 }
