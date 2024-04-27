@@ -13,12 +13,6 @@ import java.util.List;
 public class UserController {
     private final UserService userService;
 
-    @PostMapping
-    public ResponseEntity<User> createUser(@RequestBody User user) {
-        User createdUser = userService.createUser(user);
-        return ResponseEntity.ok(createdUser);
-    }
-
     @GetMapping("/{id}")
     public ResponseEntity<User> getUser(@PathVariable Long id) {
         User user = userService.getUserById(id);
@@ -31,7 +25,13 @@ public class UserController {
         return ResponseEntity.ok(users);
     }
 
-    @GetMapping
+    @PostMapping
+    public ResponseEntity<User> createUser(@RequestBody User user) {
+        User createdUser = userService.createUser(user);
+        return ResponseEntity.ok(createdUser);
+    }
+
+    @GetMapping("/period")
     public ResponseEntity<List<User>> getAllUsersByBirthDateRange(
             @RequestParam(name = "from") LocalDate from,
             @RequestParam(name = "to") LocalDate to) {
