@@ -2,6 +2,8 @@ package yaremax.com.cs_task_24_04.user;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import yaremax.com.cs_task_24_04.exceptions.DuplicateResourceException;
+import yaremax.com.cs_task_24_04.exceptions.ResourceNotFoundException;
 import yaremax.com.cs_task_24_04.validators.DateValidator;
 import yaremax.com.cs_task_24_04.validators.UserValidator;
 
@@ -17,13 +19,13 @@ public class UserService {
 
     public User createUser(User user) {
         User validUser = userValidator.validateFullUser(user);
-        if (userRepository.existsByEmail(user.getEmail())) throw new IllegalArgumentException("User with email " + user.getEmail() + " already exists");
+        if (userRepository.existsByEmail(user.getEmail())) throw new DuplicateResourceException("User with email " + user.getEmail() + " already exists");
         return userRepository.save(validUser);
     }
 
     public User getUserById(Long id) {
         return userRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("User with id " + id + " not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User with id " + id + " not found"));
     }
 
     public List<User> getAllUsers() {
@@ -33,9 +35,9 @@ public class UserService {
     public User updateUser(Long id, User updatedUser) {
         User validUpdatedUser = userValidator.validateFullUser(updatedUser);
         User existingUser = userRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("User with id " + id + " not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User with id " + id + " not found"));
         if (!existingUser.getEmail().equals(updatedUser.getEmail())
-                && userRepository.existsByEmail(updatedUser.getEmail())) throw new IllegalArgumentException("Email " + updatedUser.getEmail() + " already occupied");
+                && userRepository.existsByEmail(updatedUser.getEmail())) throw new DuplicateResourceException("Email " + updatedUser.getEmail() + " already occupied");
 
         return userRepository.save(validUpdatedUser);
     }
@@ -43,11 +45,11 @@ public class UserService {
     public User patchUser(Long id, User partialUser) {
         User validPartialUser = userValidator.validatePartialUser(partialUser);
         User existingUser = userRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("User with id " + id + " not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User with id " + id + " not found"));
 
         if (validPartialUser.getEmail() != null) {
             if (!existingUser.getEmail().equals(validPartialUser.getEmail())
-                    && userRepository.existsByEmail(validPartialUser.getEmail())) throw new IllegalArgumentException("Email " + validPartialUser.getEmail() + " already occupied");
+                    && userRepository.existsByEmail(validPartialUser.getEmail())) throw new DuplicateResourceException("Email " + validPartialUser.getEmail() + " already occupied");
             existingUser.setEmail(validPartialUser.getEmail());
         }
         if (validPartialUser.getFirstName() != null) {
@@ -69,7 +71,7 @@ public class UserService {
     }
 
     public void deleteUser(Long id) {
-        if (!userRepository.existsById(id)) throw new IllegalArgumentException("User with id " + id + " not found");
+        if (!userRepository.existsById(id)) throw new ResourceNotFoundException("User with id " + id + " not found");
         userRepository.deleteById(id);
     }
 

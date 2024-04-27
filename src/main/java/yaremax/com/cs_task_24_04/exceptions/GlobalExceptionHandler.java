@@ -17,15 +17,41 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    @ExceptionHandler(value = IllegalArgumentException.class)
-    public ResponseEntity<Object> handleIllegalArgumentException(RuntimeException ex, HttpServletRequest request){
+    @ExceptionHandler(value = InvalidDataException.class)
+    public ResponseEntity<Object> handleInvalidDataException(RuntimeException ex, HttpServletRequest request){
+        ApiException apiException = ApiException.builder()
+                .httpStatus(HttpStatus.BAD_REQUEST)
+                .message(ex.getMessage())
+                .timeStamp(ZonedDateTime.now(ZoneId.of("Z")))
+                .build();
+
+        LOGGER.error("⚠⚠⚠ Exception was thrown with message: {}", ex.getMessage());
+
+        return new ResponseEntity<>(apiException, apiException.httpStatus());
+    }
+
+    @ExceptionHandler(value = DuplicateResourceException.class)
+    public ResponseEntity<Object> handleDuplicateResourceException(RuntimeException ex, HttpServletRequest request){
         ApiException apiException = ApiException.builder()
                 .httpStatus(HttpStatus.CONFLICT)
                 .message(ex.getMessage())
                 .timeStamp(ZonedDateTime.now(ZoneId.of("Z")))
                 .build();
 
-        LOGGER.error("⚠⚠⚠ Invalid data exception with message: {}", ex.getMessage());
+        LOGGER.error("⚠⚠⚠ Exception was thrown with message: {}", ex.getMessage());
+
+        return new ResponseEntity<>(apiException, apiException.httpStatus());
+    }
+
+    @ExceptionHandler(value = ResourceNotFoundException.class)
+    public ResponseEntity<Object> handleResourceNotFoundException(RuntimeException ex, HttpServletRequest request){
+        ApiException apiException = ApiException.builder()
+                .httpStatus(HttpStatus.NOT_FOUND)
+                .message(ex.getMessage())
+                .timeStamp(ZonedDateTime.now(ZoneId.of("Z")))
+                .build();
+
+        LOGGER.error("⚠⚠⚠ Exception was thrown with message: {}", ex.getMessage());
 
         return new ResponseEntity<>(apiException, apiException.httpStatus());
     }
