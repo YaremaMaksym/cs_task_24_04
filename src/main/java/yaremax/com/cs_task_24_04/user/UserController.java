@@ -25,18 +25,18 @@ public class UserController {
         return ResponseEntity.ok(users);
     }
 
-    @PostMapping
-    public ResponseEntity<User> createUser(@RequestBody User user) {
-        User createdUser = userService.createUser(user);
-        return ResponseEntity.ok(createdUser);
-    }
-
     @GetMapping("/period")
     public ResponseEntity<List<User>> getAllUsersByBirthDateRange(
             @RequestParam(name = "from") LocalDate from,
             @RequestParam(name = "to") LocalDate to) {
         List<User> specificUsers = userService.getAllUsersByBirthDateRange(from, to);
         return ResponseEntity.ok(specificUsers);
+    }
+
+    @PostMapping
+    public ResponseEntity<User> createUser(@RequestBody User user) {
+        User createdUser = userService.createUser(user);
+        return ResponseEntity.ok(createdUser);
     }
 
     @PutMapping("/{id}")
