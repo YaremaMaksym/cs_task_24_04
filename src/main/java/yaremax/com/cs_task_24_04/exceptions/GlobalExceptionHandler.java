@@ -11,6 +11,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeParseException;
 
 @ControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
@@ -33,7 +34,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
 
-    @ExceptionHandler(value = {InvalidDataException.class})
+    @ExceptionHandler(value = {InvalidDataException.class, DateTimeParseException.class})
     public ResponseEntity<Object> handleBadRequestExceptions(RuntimeException ex, HttpServletRequest request){
         return handleException(ex, request, HttpStatus.BAD_REQUEST);
     }
