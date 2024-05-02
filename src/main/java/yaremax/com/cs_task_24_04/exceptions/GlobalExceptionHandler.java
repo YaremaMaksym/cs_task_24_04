@@ -16,43 +16,35 @@ import java.time.ZonedDateTime;
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+    private static final String LOGGER_MESSAGE_PREFIX = "⚠⚠⚠ Exception was thrown with message: ";
 
-    @ExceptionHandler(value = InvalidDataException.class)
-    public ResponseEntity<Object> handleInvalidDataException(RuntimeException ex, HttpServletRequest request){
-        ApiException apiException = ApiException.builder()
-                .httpStatus(HttpStatus.BAD_REQUEST)
-                .message(ex.getMessage())
+    private ApiException buildApiException(RuntimeException ex, HttpStatus httpStatus) {
+        return ApiException.builder()
+                .httpStatus(httpStatus)
+                .message("(" + ex.getClass().getSimpleName() + ") " + ex.getMessage())
                 .timeStamp(ZonedDateTime.now(ZoneId.of("Z")))
                 .build();
+    }
 
-        LOGGER.error("⚠⚠⚠ Exception was thrown with message: {}", ex.getMessage());
-
+    private ResponseEntity<Object> handleException(RuntimeException ex, HttpServletRequest request, HttpStatus httpStatus) {
+        ApiException apiException = buildApiException(ex, httpStatus);
+        LOGGER.error(LOGGER_MESSAGE_PREFIX + "{}", ex.getMessage());
         return new ResponseEntity<>(apiException, apiException.httpStatus());
     }
 
-    @ExceptionHandler(value = DuplicateResourceException.class)
-    public ResponseEntity<Object> handleDuplicateResourceException(RuntimeException ex, HttpServletRequest request){
-        ApiException apiException = ApiException.builder()
-                .httpStatus(HttpStatus.CONFLICT)
-                .message(ex.getMessage())
-                .timeStamp(ZonedDateTime.now(ZoneId.of("Z")))
-                .build();
 
-        LOGGER.error("⚠⚠⚠ Exception was thrown with message: {}", ex.getMessage());
-
-        return new ResponseEntity<>(apiException, apiException.httpStatus());
+    @ExceptionHandler(value = {InvalidDataException.class})
+    public ResponseEntity<Object> handleBadRequestExceptions(RuntimeException ex, HttpServletRequest request){
+        return handleException(ex, request, HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler(value = ResourceNotFoundException.class)
-    public ResponseEntity<Object> handleResourceNotFoundException(RuntimeException ex, HttpServletRequest request){
-        ApiException apiException = ApiException.builder()
-                .httpStatus(HttpStatus.NOT_FOUND)
-                .message(ex.getMessage())
-                .timeStamp(ZonedDateTime.now(ZoneId.of("Z")))
-                .build();
+    @ExceptionHandler(value = {DuplicateResourceException.class})
+    public ResponseEntity<Object> handleConflictExceptions(RuntimeException ex, HttpServletRequest request){
+        return handleException(ex, request, HttpStatus.CONFLICT);
+    }
 
-        LOGGER.error("⚠⚠⚠ Exception was thrown with message: {}", ex.getMessage());
-
-        return new ResponseEntity<>(apiException, apiException.httpStatus());
+    @ExceptionHandler(value = {ResourceNotFoundException.class})
+    public ResponseEntity<Object> handleNotFoundExceptions(RuntimeException ex, HttpServletRequest request){
+        return handleException(ex, request, HttpStatus.NOT_FOUND);
     }
 }
