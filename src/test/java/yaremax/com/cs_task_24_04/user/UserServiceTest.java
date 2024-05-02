@@ -8,8 +8,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import yaremax.com.cs_task_24_04.exceptions.DuplicateResourceException;
 import yaremax.com.cs_task_24_04.exceptions.ResourceNotFoundException;
-import yaremax.com.cs_task_24_04.validators.DateValidator;
-import yaremax.com.cs_task_24_04.validators.UserValidator;
+import yaremax.com.cs_task_24_04.validator.common.DateRangeValidator;
+import yaremax.com.cs_task_24_04.validator.user.FullUserValidator;
+import yaremax.com.cs_task_24_04.validator.user.PartialUserValidator;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -26,15 +27,17 @@ class UserServiceTest {
     @Mock
     private UserRepository userRepository;
     @Mock
-    private UserValidator userValidator;
+    private FullUserValidator fullUserValidator;
     @Mock
-    private DateValidator dateValidator;
+    private PartialUserValidator partialUserValidator;
+    @Mock
+    private DateRangeValidator dateRangeValidator;
 
     private UserService userService;
 
     @BeforeEach
     void setUp() {
-        userService = new UserService(userRepository, userValidator, dateValidator);
+        userService = new UserService(userRepository, fullUserValidator, partialUserValidator, dateRangeValidator);
     }
 
     @Nested
@@ -44,9 +47,12 @@ class UserServiceTest {
             // Arrange
             User user = User.builder()
                     .email("test@example.com")
+                    .firstName("John")
+                    .lastName("Doe")
+                    .birthDate(LocalDate.now().minusYears(25))
                     .build();
             when(userRepository.existsByEmail(user.getEmail())).thenReturn(false);
-            when(userValidator.validateFullUser(user)).thenReturn(user);
+            doNothing().when(fullUserValidator).validate(user);
             when(userRepository.save(user)).thenReturn(user);
 
             // Act
@@ -55,7 +61,7 @@ class UserServiceTest {
             // Assert
             assertThat(createdUser).isSameAs(user);
             verify(userRepository, times(1)).existsByEmail(user.getEmail());
-            verify(userValidator, times(1)).validateFullUser(user);
+            verify(fullUserValidator, times(1)).validate(user);
             verify(userRepository, times(1)).save(user);
         }
 
@@ -84,6 +90,9 @@ class UserServiceTest {
             User user = User.builder()
                     .id(userId)
                     .email("test@example.com")
+                    .firstName("John")
+                    .lastName("Doe")
+                    .birthDate(LocalDate.now().minusYears(25))
                     .build();
             when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
@@ -113,8 +122,8 @@ class UserServiceTest {
         void getAllUsers_ShouldReturnListOfUsers() {
             // Arrange
             List<User> userList = new ArrayList<>();
-            userList.add(User.builder().email("test1@example.com").build());
-            userList.add(User.builder().email("test2@example.com").build());
+            userList.add(User.builder().email("test1@example.com").firstName("John").lastName("Doe").birthDate(LocalDate.now().minusYears(25)).build());
+            userList.add(User.builder().email("test2@example.com").firstName("Jane").lastName("Doe").birthDate(LocalDate.now().minusYears(30)).build());
             when(userRepository.findAll()).thenReturn(userList);
 
             // Act
@@ -135,14 +144,20 @@ class UserServiceTest {
             User existingUser = User.builder()
                     .id(id)
                     .email("old@example.com")
+                    .firstName("John")
+                    .lastName("Doe")
+                    .birthDate(LocalDate.now().minusYears(25))
                     .build();
             User updatedUser = User.builder()
                     .id(id)
                     .email("new@example.com")
+                    .firstName("Jane")
+                    .lastName("Doe")
+                    .birthDate(LocalDate.now().minusYears(30))
                     .build();
             when(userRepository.findById(id)).thenReturn(Optional.of(existingUser));
             when(userRepository.existsByEmail(updatedUser.getEmail())).thenReturn(false);
-            when(userValidator.validateFullUser(updatedUser)).thenReturn(updatedUser);
+            doNothing().when(fullUserValidator).validate(updatedUser);
             when(userRepository.save(updatedUser)).thenReturn(updatedUser);
 
             // Act
@@ -152,7 +167,7 @@ class UserServiceTest {
             assertThat(result).isEqualTo(updatedUser);
             verify(userRepository, times(1)).findById(id);
             verify(userRepository, times(1)).existsByEmail(updatedUser.getEmail());
-            verify(userValidator, times(1)).validateFullUser(updatedUser);
+            verify(fullUserValidator, times(1)).validate(updatedUser);
             verify(userRepository, times(1)).save(updatedUser);
         }
 
@@ -163,6 +178,9 @@ class UserServiceTest {
             User updatedUser = User.builder()
                     .id(id)
                     .email("new@example.com")
+                    .firstName("Jane")
+                    .lastName("Doe")
+                    .birthDate(LocalDate.now().minusYears(30))
                     .build();
             when(userRepository.findById(id)).thenReturn(Optional.empty());
 
@@ -179,16 +197,21 @@ class UserServiceTest {
             User existingUser = User.builder()
                     .id(id)
                     .email("old@example.com")
+                    .firstName("John")
+                    .lastName("Doe")
+                    .birthDate(LocalDate.now().minusYears(25))
                     .build();
             User updatedUser = User.builder()
                     .id(id)
                     .email("new@example.com")
+                    .firstName("Jane")
+                    .lastName("Doe")
+                    .birthDate(LocalDate.now().minusYears(30))
                     .build();
             when(userRepository.findById(id)).thenReturn(Optional.of(existingUser));
             when(userRepository.existsByEmail(updatedUser.getEmail())).thenReturn(true);
 
             // Act & Assert
-
             assertThatExceptionOfType(DuplicateResourceException.class)
                     .isThrownBy(() -> userService.updateUser(id, updatedUser));
             verify(userRepository, times(1)).findById(id);
@@ -205,13 +228,16 @@ class UserServiceTest {
             User existingUser = User.builder()
                     .id(id)
                     .email("old@example.com")
+                    .firstName("John")
+                    .lastName("Doe")
+                    .birthDate(LocalDate.now().minusYears(25))
                     .build();
             User partialUser = User.builder()
                     .email("new@example.com")
                     .build();
             when(userRepository.findById(id)).thenReturn(Optional.of(existingUser));
             when(userRepository.existsByEmail(partialUser.getEmail())).thenReturn(false);
-            when(userValidator.validatePartialUser(partialUser)).thenReturn(partialUser);
+            doNothing().when(partialUserValidator).validate(partialUser);
             when(userRepository.save(existingUser)).thenReturn(existingUser);
 
             // Act
@@ -222,7 +248,7 @@ class UserServiceTest {
             assertThat(result.getEmail()).isEqualTo(partialUser.getEmail());
             verify(userRepository, times(1)).findById(id);
             verify(userRepository, times(1)).existsByEmail(partialUser.getEmail());
-            verify(userValidator, times(1)).validatePartialUser(partialUser);
+            verify(partialUserValidator, times(1)).validate(partialUser);
             verify(userRepository, times(1)).save(existingUser);
         }
 
@@ -232,15 +258,17 @@ class UserServiceTest {
             Long id = 1L;
             User existingUser = User.builder()
                     .id(id)
+                    .email("john@example.com")
                     .firstName("John")
                     .lastName("Doe")
+                    .birthDate(LocalDate.now().minusYears(25))
                     .build();
             User partialUser = User.builder()
                     .firstName("Bob")
                     .lastName("Smite")
                     .build();
             when(userRepository.findById(id)).thenReturn(Optional.of(existingUser));
-            when(userValidator.validatePartialUser(partialUser)).thenReturn(partialUser);
+            doNothing().when(partialUserValidator).validate(partialUser);
             when(userRepository.save(existingUser)).thenReturn(existingUser);
 
             // Act
@@ -249,8 +277,9 @@ class UserServiceTest {
             // Assert
             assertThat(result).isEqualTo(existingUser);
             assertThat(result.getFirstName()).isEqualTo(partialUser.getFirstName());
+            assertThat(result.getLastName()).isEqualTo(partialUser.getLastName());
             verify(userRepository, times(1)).findById(id);
-            verify(userValidator, times(1)).validatePartialUser(partialUser);
+            verify(partialUserValidator, times(1)).validate(partialUser);
             verify(userRepository, times(1)).save(existingUser);
         }
 
@@ -276,13 +305,16 @@ class UserServiceTest {
             User existingUser = User.builder()
                     .id(id)
                     .email("old@example.com")
+                    .firstName("John")
+                    .lastName("Doe")
+                    .birthDate(LocalDate.now().minusYears(25))
                     .build();
             User partialUser = User.builder()
                     .email("new@example.com")
                     .build();
             when(userRepository.findById(id)).thenReturn(Optional.of(existingUser));
             when(userRepository.existsByEmail(partialUser.getEmail())).thenReturn(true);
-            when(userValidator.validatePartialUser(partialUser)).thenReturn(partialUser);
+            doNothing().when(partialUserValidator).validate(partialUser);
 
             // Act & Assert
             assertThatExceptionOfType(DuplicateResourceException.class)
@@ -329,15 +361,17 @@ class UserServiceTest {
             LocalDate fromDate = LocalDate.of(2020, 1, 1);
             LocalDate toDate = LocalDate.of(2020, 12, 31);
             List<User> userList = new ArrayList<>();
-            userList.add(User.builder().email("test1@example.com").build());
-            userList.add(User.builder().email("test2@example.com").build());
+            userList.add(User.builder().email("test1@example.com").firstName("John").lastName("Doe").birthDate(LocalDate.of(2020, 6, 15)).build());
+            userList.add(User.builder().email("test2@example.com").firstName("Jane").lastName("Smith").birthDate(LocalDate.of(2020, 10, 20)).build());
             when(userRepository.findUsersByBirthDateBetween(fromDate, toDate)).thenReturn(userList);
+            doNothing().when(dateRangeValidator).validate(any(DateRange.class));
 
             // Act
             List<User> retrievedUsers = userService.getAllUsersByBirthDateRange(fromDate, toDate);
 
             // Assert
             assertThat(retrievedUsers).isEqualTo(userList);
+            verify(dateRangeValidator).validate(new DateRange(fromDate, toDate));
         }
 
         @Test
@@ -346,12 +380,14 @@ class UserServiceTest {
             LocalDate fromDate = LocalDate.of(2020, 1, 1);
             LocalDate toDate = LocalDate.of(2020, 12, 31);
             when(userRepository.findUsersByBirthDateBetween(fromDate, toDate)).thenReturn(Collections.emptyList());
+            doNothing().when(dateRangeValidator).validate(any(DateRange.class));
 
             // Act
             List<User> retrievedUsers = userService.getAllUsersByBirthDateRange(fromDate, toDate);
 
             // Assert
             assertThat(retrievedUsers).isEmpty();
+            verify(dateRangeValidator).validate(new DateRange(fromDate, toDate));
         }
     }
 

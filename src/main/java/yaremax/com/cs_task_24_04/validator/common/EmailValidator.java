@@ -1,12 +1,14 @@
-package yaremax.com.cs_task_24_04.validators;
+package yaremax.com.cs_task_24_04.validator.common;
 
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
+import yaremax.com.cs_task_24_04.exceptions.InvalidDataException;
+import yaremax.com.cs_task_24_04.validator.Validator;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@Service
-public class EmailValidator {
+@Component
+public class EmailValidator implements Validator<String> {
     /*
     VALID
     username@domain.com
@@ -24,13 +26,13 @@ public class EmailValidator {
     private static final String EMAIL_REGEX_PATTERN = "^(?=.{1,64}@)[A-Za-z0-9]+(\\.[A-Za-z0-9]+)*@"
             + "[^-][A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)*(\\.[A-Za-z]{2,})$";
 
-    public boolean isValid(String email) {
-        if (email == null || email.isEmpty()){
-            return false;
+    public void validate(String email)  {
+        if (email == null || email.trim().isEmpty()){
+            throw new InvalidDataException("Email cannot be null or empty");
         }
 
         Pattern pattern = Pattern.compile(EMAIL_REGEX_PATTERN);
         Matcher matcher = pattern.matcher(email);
-        return matcher.matches();
+        if (!matcher.matches()) throw new InvalidDataException("Invalid email");
     }
 }

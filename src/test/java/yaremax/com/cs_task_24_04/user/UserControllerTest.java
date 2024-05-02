@@ -1,16 +1,17 @@
 package yaremax.com.cs_task_24_04.user;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import yaremax.com.cs_task_24_04.exceptions.GlobalExceptionHandler;
 import yaremax.com.cs_task_24_04.exceptions.InvalidDataException;
 import yaremax.com.cs_task_24_04.exceptions.ResourceNotFoundException;
 
@@ -21,16 +22,23 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(UserController.class)
 @ExtendWith(MockitoExtension.class)
 class UserControllerTest {
 
-    @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
+    @Mock
     private UserService userService;
+
+    @BeforeEach
+    void setUp() {
+        mockMvc = MockMvcBuilders.standaloneSetup(new UserController(userService))
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
+    }
 
     @Nested
     class GetUserByIdTests {
@@ -44,8 +52,8 @@ class UserControllerTest {
 
             // Act & Assert
             mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/users/{id}", userId))
-                    .andExpect(MockMvcResultMatchers.status().isOk())
-                    .andExpect(MockMvcResultMatchers.jsonPath("$.id").value(user.getId()));
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id").value(user.getId()));
 
             verify(userService, times(1)).getUserById(userId);
         }
@@ -59,7 +67,7 @@ class UserControllerTest {
 
             // Act & Assert
             mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/users/{id}", userId))
-                    .andExpect(MockMvcResultMatchers.status().isNotFound());
+                    .andExpect(status().isNotFound());
 
             verify(userService, times(1)).getUserById(userId);
         }
@@ -73,8 +81,8 @@ class UserControllerTest {
 
         // Act & Assert
         mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/users"))
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.jsonPath("$").isArray());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray());
 
         verify(userService, times(1)).getAllUsers();
     }
@@ -91,8 +99,8 @@ class UserControllerTest {
         mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/users/period")
                         .param("from", from.toString())
                         .param("to", to.toString()))
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.jsonPath("$").isArray());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray());
 
         verify(userService, times(1)).getAllUsersByBirthDateRange(from, to);
     }
@@ -123,8 +131,8 @@ class UserControllerTest {
                                 "birthDate": "2020-05-15"
                             }
                             """))
-                    .andExpect(MockMvcResultMatchers.status().isOk())
-                    .andExpect(MockMvcResultMatchers.jsonPath("$.id").value(user.getId()));
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id").value(user.getId()));
 
             verify(userService, times(1)).createUser(any());
         }
@@ -146,7 +154,7 @@ class UserControllerTest {
                                 "birthDate": "2020-05-15"
                             }
                             """))
-                    .andExpect(MockMvcResultMatchers.status().isBadRequest());
+                    .andExpect(status().isBadRequest());
         }
     }
 
@@ -177,8 +185,8 @@ class UserControllerTest {
                                 "birthDate": "2020-05-15"
                             }
                             """))
-                    .andExpect(MockMvcResultMatchers.status().isOk())
-                    .andExpect(MockMvcResultMatchers.jsonPath("$.id").value(user.getId()));
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id").value(user.getId()));
 
             verify(userService, times(1)).updateUser(eq(userId), any());
         }
@@ -201,7 +209,7 @@ class UserControllerTest {
                                 "birthDate": "2020-05-15"
                             }
                             """))
-                    .andExpect(MockMvcResultMatchers.status().isNotFound());
+                    .andExpect(status().isNotFound());
 
             verify(userService, times(1)).updateUser(eq(userId), any());
         }
@@ -230,8 +238,8 @@ class UserControllerTest {
                                 "firstName": "John"
                             }
                             """))
-                    .andExpect(MockMvcResultMatchers.status().isOk())
-                    .andExpect(MockMvcResultMatchers.jsonPath("$.id").value(user.getId()));
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id").value(user.getId()));
 
             verify(userService, times(1)).patchUser(eq(userId), any());
         }
@@ -252,7 +260,7 @@ class UserControllerTest {
                                 "firstName": "John"
                             }
                             """))
-                    .andExpect(MockMvcResultMatchers.status().isNotFound());
+                    .andExpect(status().isNotFound());
 
             verify(userService, times(1)).patchUser(eq(userId), any());
         }
@@ -268,7 +276,7 @@ class UserControllerTest {
 
             // Act & Assert
             mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/users/{id}", userId))
-                    .andExpect(MockMvcResultMatchers.status().isOk())
+                    .andExpect(status().isOk())
                     .andExpect(MockMvcResultMatchers.content().string("Successfully deleted user"));
 
             verify(userService, times(1)).deleteUser(userId);
@@ -283,7 +291,7 @@ class UserControllerTest {
 
             // Act & Assert
             mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/users/{id}", userId))
-                    .andExpect(MockMvcResultMatchers.status().isNotFound());
+                    .andExpect(status().isNotFound());
 
             verify(userService, times(1)).deleteUser(userId);
         }
