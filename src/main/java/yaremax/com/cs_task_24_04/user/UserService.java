@@ -43,7 +43,20 @@ public class UserService {
         if (!existingUser.getEmail().equals(updatedUserDto.getEmail())
                 && userRepository.existsByEmail(updatedUserDto.getEmail())) throw new DuplicateResourceException("Email " + updatedUserDto.getEmail() + " already occupied");
 
-        return userRepository.save(userMapper.toEntity(updatedUserDto));
+        existingUser.setEmail(updatedUserDto.getEmail());
+        existingUser.setFirstName(updatedUserDto.getFirstName());
+        existingUser.setLastName(updatedUserDto.getLastName());
+        existingUser.setBirthDate(updatedUserDto.getBirthDate());
+
+
+        if (updatedUserDto.getAddress() != null) {
+            existingUser.setAddress(existingUser.getAddress());
+        }
+        if (updatedUserDto.getPhone() != null) {
+            existingUser.setPhone(existingUser.getPhone());
+        }
+
+        return userRepository.save(existingUser);
     }
 
     public User patchUser(Long id, UserDto partialUserDto) {
