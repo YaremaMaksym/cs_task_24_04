@@ -28,7 +28,7 @@ class DateRangeValidatorTest {
         DateRange dateRange = new DateRange(null, LocalDate.now());
 
         // Act & Assert
-        assertThatExceptionOfType(IllegalArgumentException.class)
+        assertThatExceptionOfType(InvalidDataException.class)
                 .isThrownBy(() -> validator.validate(dateRange));
     }
 
@@ -38,7 +38,7 @@ class DateRangeValidatorTest {
         DateRange dateRange = new DateRange(LocalDate.now(), null);
 
         // Act & Assert
-        assertThatExceptionOfType(IllegalArgumentException.class)
+        assertThatExceptionOfType(InvalidDataException.class)
                 .isThrownBy(() -> validator.validate(dateRange));
     }
 
@@ -52,7 +52,7 @@ class DateRangeValidatorTest {
         DateRange range = new DateRange(from, to);
 
         // Act & Assert
-        assertThatExceptionOfType(IllegalArgumentException.class)
+        assertThatExceptionOfType(InvalidDataException.class)
                 .isThrownBy(() -> validator.validate(range));
     }
 

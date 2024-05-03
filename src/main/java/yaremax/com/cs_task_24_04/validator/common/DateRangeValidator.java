@@ -19,11 +19,11 @@ public class DateRangeValidator implements Validator<DateRange> {
         LocalDate toDate = dateRange.toDate();
 
         if (fromDate == null || toDate == null) {
-            throw new IllegalArgumentException("Both fromDate and toDate dates must be provided");
+            throw new InvalidDataException("Both fromDate and toDate dates must be provided");
         }
 
         if (fromDate.isAfter(toDate)) {
-            throw new IllegalArgumentException("From date cannot be after toDate date");
+            throw new InvalidDataException("From date cannot be after toDate date");
         }
     }
 }
