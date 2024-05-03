@@ -15,6 +15,10 @@ public class BirthDateValidator implements Validator<LocalDate> {
 
     @Override
     public void validate(LocalDate birthDate) {
+        if (birthDate == null) {
+            throw new InvalidDataException("Birth date cannot be null or empty");
+        }
+
         if (LocalDate.now().isBefore(birthDate)) throw new InvalidDataException("Invalid birth date. Can't be in future");
         if (LocalDate.now().getYear() - birthDate.getYear() < minAge) throw new InvalidDataException("Invalid birth date. Not old enough (min age is " + minAge + " y.)");
     }
