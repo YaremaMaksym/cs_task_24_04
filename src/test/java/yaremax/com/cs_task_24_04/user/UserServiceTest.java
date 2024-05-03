@@ -176,7 +176,6 @@ class UserServiceTest {
             when(userRepository.existsByEmail(updatedUserDto.getEmail())).thenReturn(false);
             doNothing().when(fullUserDtoValidator).validate(updatedUserDto);
             when(userRepository.save(updatedUser)).thenReturn(updatedUser);
-            when(userMapper.toEntity(updatedUserDto)).thenReturn(updatedUser);
 
             // Act
             User result = userService.updateUser(id, updatedUserDto);
@@ -187,7 +186,6 @@ class UserServiceTest {
             verify(userRepository, times(1)).existsByEmail(updatedUserDto.getEmail());
             verify(fullUserDtoValidator, times(1)).validate(updatedUserDto);
             verify(userRepository, times(1)).save(updatedUser);
-            verify(userMapper, times(1)).toEntity(updatedUserDto);
         }
 
         @Test

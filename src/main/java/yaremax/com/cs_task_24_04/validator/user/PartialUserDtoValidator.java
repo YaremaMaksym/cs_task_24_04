@@ -1,5 +1,6 @@
 package yaremax.com.cs_task_24_04.validator.user;
 
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 import yaremax.com.cs_task_24_04.exceptions.InvalidDataException;
 import yaremax.com.cs_task_24_04.user.UserDto;
@@ -10,11 +11,12 @@ import yaremax.com.cs_task_24_04.validator.common.FirstNameValidator;
 import yaremax.com.cs_task_24_04.validator.common.LastNameValidator;
 
 @Component
+@AllArgsConstructor
 public class PartialUserDtoValidator implements Validator<UserDto> {
-    private final EmailValidator emailValidator = new EmailValidator();
-    private final FirstNameValidator firstNameValidator = new FirstNameValidator();
-    private final LastNameValidator lastNameValidator = new LastNameValidator();
-    private final BirthDateValidator birthDateValidator = new BirthDateValidator();
+    private final EmailValidator emailValidator;
+    private final FirstNameValidator firstNameValidator;
+    private final LastNameValidator lastNameValidator;
+    private final BirthDateValidator birthDateValidator;
 
     @Override
     public void validate(UserDto user) {
