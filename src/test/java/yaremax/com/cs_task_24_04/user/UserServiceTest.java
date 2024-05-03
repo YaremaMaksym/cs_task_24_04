@@ -8,9 +8,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import yaremax.com.cs_task_24_04.exceptions.DuplicateResourceException;
 import yaremax.com.cs_task_24_04.exceptions.ResourceNotFoundException;
+import yaremax.com.cs_task_24_04.mappers.UserMapper;
 import yaremax.com.cs_task_24_04.validator.common.DateRangeValidator;
-import yaremax.com.cs_task_24_04.validator.user.FullUserValidator;
-import yaremax.com.cs_task_24_04.validator.user.PartialUserValidator;
+import yaremax.com.cs_task_24_04.validator.user.FullUserDtoValidator;
+import yaremax.com.cs_task_24_04.validator.user.PartialUserDtoValidator;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -25,11 +26,13 @@ import static org.mockito.Mockito.*;
 class UserServiceTest {
 
     @Mock
+    private UserMapper userMapper;
+    @Mock
     private UserRepository userRepository;
     @Mock
-    private FullUserValidator fullUserValidator;
+    private FullUserDtoValidator fullUserDtoValidator;
     @Mock
-    private PartialUserValidator partialUserValidator;
+    private PartialUserDtoValidator partialUserDtoValidator;
     @Mock
     private DateRangeValidator dateRangeValidator;
 
@@ -37,7 +40,7 @@ class UserServiceTest {
 
     @BeforeEach
     void setUp() {
-        userService = new UserService(userRepository, fullUserValidator, partialUserValidator, dateRangeValidator);
+        userService = new UserService(userMapper, userRepository, fullUserDtoValidator, partialUserDtoValidator, dateRangeValidator);
     }
 
     @Nested
@@ -45,38 +48,46 @@ class UserServiceTest {
         @Test
         void createUser_shouldCreateUser_whenEmailNotExists() {
             // Arrange
+            UserDto userDto = UserDto.builder()
+                    .email("test@example.com")
+                    .firstName("John")
+                    .lastName("Doe")
+                    .birthDate(LocalDate.now().minusYears(25))
+                    .build();
             User user = User.builder()
                     .email("test@example.com")
                     .firstName("John")
                     .lastName("Doe")
                     .birthDate(LocalDate.now().minusYears(25))
                     .build();
-            when(userRepository.existsByEmail(user.getEmail())).thenReturn(false);
-            doNothing().when(fullUserValidator).validate(user);
+            when(userRepository.existsByEmail(userDto.getEmail())).thenReturn(false);
+            doNothing().when(fullUserDtoValidator).validate(userDto);
             when(userRepository.save(user)).thenReturn(user);
+            when(userMapper.toEntity(userDto)).thenReturn(user);
 
             // Act
-            User createdUser = userService.createUser(user);
+            User createdUser = userService.createUser(userDto);
 
             // Assert
             assertThat(createdUser).isSameAs(user);
-            verify(userRepository, times(1)).existsByEmail(user.getEmail());
-            verify(fullUserValidator, times(1)).validate(user);
+            verify(userRepository, times(1)).existsByEmail(userDto.getEmail());
+            verify(fullUserDtoValidator, times(1)).validate(userDto);
             verify(userRepository, times(1)).save(user);
+            verify(userMapper, times(1)).toEntity(userDto);
         }
 
         @Test
         void createUser_shouldThrowDuplicateResourceException_whenEmailExists() {
             // Arrange
-            User user = User.builder()
+            UserDto userDto = UserDto.builder()
                     .email("test@example.com")
                     .build();
-            when(userRepository.existsByEmail(user.getEmail())).thenReturn(true);
+            when(userRepository.existsByEmail(userDto.getEmail())).thenReturn(true);
 
             // Act & Assert
             assertThatExceptionOfType(DuplicateResourceException.class)
-                    .isThrownBy(() -> userService.createUser(user));
-            verify(userRepository, times(1)).existsByEmail(user.getEmail());
+                    .isThrownBy(() -> userService.createUser(userDto));
+            verify(userRepository, times(1)).existsByEmail(userDto.getEmail());
         }
     }
 
@@ -141,6 +152,12 @@ class UserServiceTest {
         void updateUser_shouldUpdateUser_whenValidUserProvided() {
             // Arrange
             Long id = 1L;
+            UserDto updatedUserDto = UserDto.builder()
+                    .email("new@example.com")
+                    .firstName("Jane")
+                    .lastName("Doe")
+                    .birthDate(LocalDate.now().minusYears(30))
+                    .build();
             User existingUser = User.builder()
                     .id(id)
                     .email("old@example.com")
@@ -156,27 +173,28 @@ class UserServiceTest {
                     .birthDate(LocalDate.now().minusYears(30))
                     .build();
             when(userRepository.findById(id)).thenReturn(Optional.of(existingUser));
-            when(userRepository.existsByEmail(updatedUser.getEmail())).thenReturn(false);
-            doNothing().when(fullUserValidator).validate(updatedUser);
+            when(userRepository.existsByEmail(updatedUserDto.getEmail())).thenReturn(false);
+            doNothing().when(fullUserDtoValidator).validate(updatedUserDto);
             when(userRepository.save(updatedUser)).thenReturn(updatedUser);
+            when(userMapper.toEntity(updatedUserDto)).thenReturn(updatedUser);
 
             // Act
-            User result = userService.updateUser(id, updatedUser);
+            User result = userService.updateUser(id, updatedUserDto);
 
             // Assert
             assertThat(result).isEqualTo(updatedUser);
             verify(userRepository, times(1)).findById(id);
-            verify(userRepository, times(1)).existsByEmail(updatedUser.getEmail());
-            verify(fullUserValidator, times(1)).validate(updatedUser);
+            verify(userRepository, times(1)).existsByEmail(updatedUserDto.getEmail());
+            verify(fullUserDtoValidator, times(1)).validate(updatedUserDto);
             verify(userRepository, times(1)).save(updatedUser);
+            verify(userMapper, times(1)).toEntity(updatedUserDto);
         }
 
         @Test
         void updateUser_shouldThrowResourceNotFoundException_whenUserNotFound() {
             // Arrange
             Long id = 1L;
-            User updatedUser = User.builder()
-                    .id(id)
+            UserDto updatedUserDto = UserDto.builder()
                     .email("new@example.com")
                     .firstName("Jane")
                     .lastName("Doe")
@@ -186,7 +204,7 @@ class UserServiceTest {
 
             // Act & Assert
             assertThatExceptionOfType(ResourceNotFoundException.class)
-                    .isThrownBy(() -> userService.updateUser(id, updatedUser));
+                    .isThrownBy(() -> userService.updateUser(id, updatedUserDto));
             verify(userRepository, times(1)).findById(id);
         }
 
@@ -194,6 +212,12 @@ class UserServiceTest {
         void updateUser_shouldThrowDuplicateResourceException_whenEmailAlreadyExists() {
             // Arrange
             Long id = 1L;
+            UserDto updatedUserDto = UserDto.builder()
+                    .email("new@example.com")
+                    .firstName("Jane")
+                    .lastName("Doe")
+                    .birthDate(LocalDate.now().minusYears(30))
+                    .build();
             User existingUser = User.builder()
                     .id(id)
                     .email("old@example.com")
@@ -201,21 +225,14 @@ class UserServiceTest {
                     .lastName("Doe")
                     .birthDate(LocalDate.now().minusYears(25))
                     .build();
-            User updatedUser = User.builder()
-                    .id(id)
-                    .email("new@example.com")
-                    .firstName("Jane")
-                    .lastName("Doe")
-                    .birthDate(LocalDate.now().minusYears(30))
-                    .build();
             when(userRepository.findById(id)).thenReturn(Optional.of(existingUser));
-            when(userRepository.existsByEmail(updatedUser.getEmail())).thenReturn(true);
+            when(userRepository.existsByEmail(updatedUserDto.getEmail())).thenReturn(true);
 
             // Act & Assert
             assertThatExceptionOfType(DuplicateResourceException.class)
-                    .isThrownBy(() -> userService.updateUser(id, updatedUser));
+                    .isThrownBy(() -> userService.updateUser(id, updatedUserDto));
             verify(userRepository, times(1)).findById(id);
-            verify(userRepository, times(1)).existsByEmail(updatedUser.getEmail());
+            verify(userRepository, times(1)).existsByEmail(updatedUserDto.getEmail());
         }
     }
 
@@ -232,23 +249,23 @@ class UserServiceTest {
                     .lastName("Doe")
                     .birthDate(LocalDate.now().minusYears(25))
                     .build();
-            User partialUser = User.builder()
+            UserDto partialUserDto = UserDto.builder()
                     .email("new@example.com")
                     .build();
             when(userRepository.findById(id)).thenReturn(Optional.of(existingUser));
-            when(userRepository.existsByEmail(partialUser.getEmail())).thenReturn(false);
-            doNothing().when(partialUserValidator).validate(partialUser);
+            when(userRepository.existsByEmail(partialUserDto.getEmail())).thenReturn(false);
+            doNothing().when(partialUserDtoValidator).validate(partialUserDto);
             when(userRepository.save(existingUser)).thenReturn(existingUser);
 
             // Act
-            User result = userService.patchUser(id, partialUser);
+            User result = userService.patchUser(id, partialUserDto);
 
             // Assert
             assertThat(result).isEqualTo(existingUser);
-            assertThat(result.getEmail()).isEqualTo(partialUser.getEmail());
+            assertThat(result.getEmail()).isEqualTo(partialUserDto.getEmail());
             verify(userRepository, times(1)).findById(id);
-            verify(userRepository, times(1)).existsByEmail(partialUser.getEmail());
-            verify(partialUserValidator, times(1)).validate(partialUser);
+            verify(userRepository, times(1)).existsByEmail(partialUserDto.getEmail());
+            verify(partialUserDtoValidator, times(1)).validate(partialUserDto);
             verify(userRepository, times(1)).save(existingUser);
         }
 
@@ -263,23 +280,23 @@ class UserServiceTest {
                     .lastName("Doe")
                     .birthDate(LocalDate.now().minusYears(25))
                     .build();
-            User partialUser = User.builder()
+            UserDto partialUserDto = UserDto.builder()
                     .firstName("Bob")
                     .lastName("Smite")
                     .build();
             when(userRepository.findById(id)).thenReturn(Optional.of(existingUser));
-            doNothing().when(partialUserValidator).validate(partialUser);
+            doNothing().when(partialUserDtoValidator).validate(partialUserDto);
             when(userRepository.save(existingUser)).thenReturn(existingUser);
 
             // Act
-            User result = userService.patchUser(id, partialUser);
+            User result = userService.patchUser(id, partialUserDto);
 
             // Assert
             assertThat(result).isEqualTo(existingUser);
-            assertThat(result.getFirstName()).isEqualTo(partialUser.getFirstName());
-            assertThat(result.getLastName()).isEqualTo(partialUser.getLastName());
+            assertThat(result.getFirstName()).isEqualTo(partialUserDto.getFirstName());
+            assertThat(result.getLastName()).isEqualTo(partialUserDto.getLastName());
             verify(userRepository, times(1)).findById(id);
-            verify(partialUserValidator, times(1)).validate(partialUser);
+            verify(partialUserDtoValidator, times(1)).validate(partialUserDto);
             verify(userRepository, times(1)).save(existingUser);
         }
 
@@ -287,14 +304,14 @@ class UserServiceTest {
         void patchUser_shouldThrowResourceNotFoundException_whenUserNotFound() {
             // Arrange
             Long id = 1L;
-            User partialUser = User.builder()
+            UserDto partialUserDto = UserDto.builder()
                     .email("new@example.com")
                     .build();
             when(userRepository.findById(id)).thenReturn(Optional.empty());
 
             // Act & Assert
             assertThatExceptionOfType(ResourceNotFoundException.class)
-                    .isThrownBy(() -> userService.patchUser(id, partialUser));
+                    .isThrownBy(() -> userService.patchUser(id, partialUserDto));
             verify(userRepository, times(1)).findById(id);
         }
 
@@ -309,18 +326,18 @@ class UserServiceTest {
                     .lastName("Doe")
                     .birthDate(LocalDate.now().minusYears(25))
                     .build();
-            User partialUser = User.builder()
+            UserDto partialUserDto = UserDto.builder()
                     .email("new@example.com")
                     .build();
             when(userRepository.findById(id)).thenReturn(Optional.of(existingUser));
-            when(userRepository.existsByEmail(partialUser.getEmail())).thenReturn(true);
-            doNothing().when(partialUserValidator).validate(partialUser);
+            when(userRepository.existsByEmail(partialUserDto.getEmail())).thenReturn(true);
+            doNothing().when(partialUserDtoValidator).validate(partialUserDto);
 
             // Act & Assert
             assertThatExceptionOfType(DuplicateResourceException.class)
-                    .isThrownBy(() -> userService.patchUser(id, partialUser));
+                    .isThrownBy(() -> userService.patchUser(id, partialUserDto));
             verify(userRepository, times(1)).findById(id);
-            verify(userRepository, times(1)).existsByEmail(partialUser.getEmail());
+            verify(userRepository, times(1)).existsByEmail(partialUserDto.getEmail());
         }
     }
 
@@ -345,7 +362,6 @@ class UserServiceTest {
             // Arrange
             long userId = 1L;
             when(userRepository.existsById(userId)).thenReturn(false);
-
             // Act & Assert
             assertThatExceptionOfType(ResourceNotFoundException.class)
                     .isThrownBy(() -> userService.deleteUser(userId));
@@ -390,6 +406,4 @@ class UserServiceTest {
             verify(dateRangeValidator).validate(new DateRange(fromDate, toDate));
         }
     }
-
-
 }

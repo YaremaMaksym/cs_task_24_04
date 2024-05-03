@@ -4,9 +4,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import yaremax.com.cs_task_24_04.exceptions.DuplicateResourceException;
 import yaremax.com.cs_task_24_04.exceptions.ResourceNotFoundException;
+import yaremax.com.cs_task_24_04.mappers.UserMapper;
 import yaremax.com.cs_task_24_04.validator.common.DateRangeValidator;
-import yaremax.com.cs_task_24_04.validator.user.FullUserValidator;
-import yaremax.com.cs_task_24_04.validator.user.PartialUserValidator;
+import yaremax.com.cs_task_24_04.validator.user.FullUserDtoValidator;
+import yaremax.com.cs_task_24_04.validator.user.PartialUserDtoValidator;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -14,15 +15,16 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class UserService {
+    private final UserMapper userMapper;
     private final UserRepository userRepository;
-    private final FullUserValidator fullUserValidator;
-    private final PartialUserValidator partialUserValidator;
+    private final FullUserDtoValidator fullUserDtoValidator;
+    private final PartialUserDtoValidator partialUserDtoValidator;
     private final DateRangeValidator dateRangeValidator;
 
-    public User createUser(User user) {
-        fullUserValidator.validate(user);
-        if (userRepository.existsByEmail(user.getEmail())) throw new DuplicateResourceException("User with email " + user.getEmail() + " already exists");
-        return userRepository.save(user);
+    public User createUser(UserDto userDto) {
+        fullUserDtoValidator.validate(userDto);
+        if (userRepository.existsByEmail(userDto.getEmail())) throw new DuplicateResourceException("User with email " + userDto.getEmail() + " already exists");
+        return userRepository.save(userMapper.toEntity(userDto));
     }
 
     public User getUserById(Long id) {
@@ -34,40 +36,40 @@ public class UserService {
         return userRepository.findAll();
     }
 
-    public User updateUser(Long id, User updatedUser) {
-        fullUserValidator.validate(updatedUser);
+    public User updateUser(Long id, UserDto updatedUserDto) {
+        fullUserDtoValidator.validate(updatedUserDto);
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User with id " + id + " not found"));
-        if (!existingUser.getEmail().equals(updatedUser.getEmail())
-                && userRepository.existsByEmail(updatedUser.getEmail())) throw new DuplicateResourceException("Email " + updatedUser.getEmail() + " already occupied");
+        if (!existingUser.getEmail().equals(updatedUserDto.getEmail())
+                && userRepository.existsByEmail(updatedUserDto.getEmail())) throw new DuplicateResourceException("Email " + updatedUserDto.getEmail() + " already occupied");
 
-        return userRepository.save(updatedUser);
+        return userRepository.save(userMapper.toEntity(updatedUserDto));
     }
 
-    public User patchUser(Long id, User partialUser) {
-        partialUserValidator.validate(partialUser);
+    public User patchUser(Long id, UserDto partialUserDto) {
+        partialUserDtoValidator.validate(partialUserDto);
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User with id " + id + " not found"));
 
-        if (partialUser.getEmail() != null) {
-            if (!existingUser.getEmail().equals(partialUser.getEmail())
-                    && userRepository.existsByEmail(partialUser.getEmail())) throw new DuplicateResourceException("Email " + partialUser.getEmail() + " already occupied");
-            existingUser.setEmail(partialUser.getEmail());
+        if (partialUserDto.getEmail() != null) {
+            if (!existingUser.getEmail().equals(partialUserDto.getEmail())
+                    && userRepository.existsByEmail(partialUserDto.getEmail())) throw new DuplicateResourceException("Email " + partialUserDto.getEmail() + " already occupied");
+            existingUser.setEmail(partialUserDto.getEmail());
         }
-        if (partialUser.getFirstName() != null) {
-            existingUser.setFirstName(partialUser.getFirstName());
+        if (partialUserDto.getFirstName() != null) {
+            existingUser.setFirstName(partialUserDto.getFirstName());
         }
-        if (partialUser.getLastName() != null) {
-            existingUser.setLastName(partialUser.getLastName());
+        if (partialUserDto.getLastName() != null) {
+            existingUser.setLastName(partialUserDto.getLastName());
         }
-        if (partialUser.getBirthDate() != null) {
-            existingUser.setBirthDate(partialUser.getBirthDate());
+        if (partialUserDto.getBirthDate() != null) {
+            existingUser.setBirthDate(partialUserDto.getBirthDate());
         }
-        if (partialUser.getAddress() != null) {
-            existingUser.setAddress(partialUser.getAddress());
+        if (partialUserDto.getAddress() != null) {
+            existingUser.setAddress(partialUserDto.getAddress());
         }
-        if (partialUser.getPhone() != null) {
-            existingUser.setPhone(partialUser.getPhone());
+        if (partialUserDto.getPhone() != null) {
+            existingUser.setPhone(partialUserDto.getPhone());
         }
         return userRepository.save(existingUser);
     }
